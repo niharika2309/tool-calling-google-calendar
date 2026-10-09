@@ -87,6 +87,12 @@ Then open **http://127.0.0.1:5000**. Type what you'd like to schedule and hit **
 
 If the assistant is missing a detail (for example, you didn't say *when*), it will ask a short question — just answer it in the box and it'll pick up where it left off.
 
+### What it looks like
+
+| Fresh conversation | Assistant thinking | Event created |
+| --- | --- | --- |
+| ![Fresh conversation](images/01-initial.png) | ![Assistant thinking](images/02-typing.png) | ![Event created](images/03-event-created.png) |
+
 ## A note on security
 
 `credentials.json` and `token.json` let someone control your calendar. They are listed in `.gitignore`, so git will never commit them. **Don't remove them from `.gitignore`, and don't upload or share those files.**
