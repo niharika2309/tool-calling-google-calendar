@@ -44,8 +44,10 @@ The first time you run the program, a browser window opens for you to sign in an
 From this folder, in your terminal:
 
 ```bash
-pip install openai google-auth google-auth-oauthlib google-api-python-client
+pip install -r requirements.txt
 ```
+
+This installs the four packages the project needs (the OpenAI client, and the Google sign-in / Calendar libraries).
 
 ### 3. Point it at an AI
 

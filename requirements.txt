@@ -1,0 +1,7 @@
+# Dependencies for the Google Calendar tool-calling demo.
+# Install with:  pip install -r requirements.txt
+
+openai==3.26.1                    # Talks to the AI (any OpenAI-compatible API)
+google-auth==2.61.0               # Signs you into Google securely (OAuth)
+google-auth-oauthlib==1.5.0       # Opens the browser for the one-time Google sign-in
+google-api-python-client==2.201.0 # Lets the program talk to the Google Calendar API
