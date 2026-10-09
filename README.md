@@ -22,6 +22,8 @@ The whole idea in one line: **the AI does the thinking, the code does the doing.
 | --- | --- |
 | `calendar_assistant.py` | The main program. Wires everything together and runs the conversation. |
 | `authenticate.py` | Handles the one-time Google sign-in (OAuth) so the program is allowed to touch your calendar. |
+| `app.py` | A small web server that powers the chatbot interface (optional — the command-line version above still works). |
+| `templates/index.html` | The chatbot page you see in the browser. |
 | `credentials.json` | Your Google app credentials. You download this from Google Cloud. **Secret — never shared.** |
 | `token.json` | A saved sign-in token, created automatically the first time you run it. **Secret — never shared.** |
 | `.gitignore` | Tells git to keep the secret files above out of the repository. |
@@ -72,6 +74,18 @@ What event should I schedule?  Schedule a 30-minute coffee chat with Sam on Frid
 ```
 
 If the AI decides to create the event, the program prints a link you can open in your browser.
+
+## Run the web UI (optional)
+
+There's also a simple **chatbot-style web interface** that does the same thing in your browser:
+
+```bash
+python app.py
+```
+
+Then open **http://127.0.0.1:5000**. Type what you'd like to schedule and hit **Send** (or press Enter). When the assistant creates the event, it confirms it and shows you a preview card with a link to open it in Google Calendar. Use the **Refresh** button to start a fresh conversation.
+
+If the assistant is missing a detail (for example, you didn't say *when*), it will ask a short question — just answer it in the box and it'll pick up where it left off.
 
 ## A note on security
 

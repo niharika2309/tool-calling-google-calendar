@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendar Assistant</title>
+<style>
+  :root {
+    --bg: #eef1f8;
+    --card: #ffffff;
+    --ink: #1f2430;
+    --muted: #6b7280;
+    --accent: #4f46e5;
+    --accent-2: #7c3aed;
+    --user-bubble: #4f46e5;
+    --ai-bubble: #eceef6;
+    --border: #e5e7ef;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #eef1fb, #f6f2fb);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+  }
+  .app {
+    width: min(560px, 100%);
+    height: min(760px, 94vh);
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    background: var(--card);
+    border-radius: 18px;
+    box-shadow: 0 20px 50px rgba(31,36,48,.18);
+    overflow: hidden;
+  }
+  /* header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff;
+  }
+  .header h1 { font-size: 17px; margin: 0; font-weight: 650; display: flex; align-items: center; gap: 8px; }
+  .header .sub { font-size: 12px; opacity: .85; margin-top: 3px; }
+  .refresh {
+    border: none; cursor: pointer;
+    background: rgba(255,255,255,.18);
+    color: #fff; padding: 8px 13px; border-radius: 10px;
+    font-size: 13px; font-weight: 600;
+    transition: background .15s ease;
+  }
+  .refresh:hover { background: rgba(255,255,255,.32); }
+  /* chat area */
+  .chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: var(--bg);
+  }
+  .row { display: flex; }
+  .row.user { justify-content: flex-end; }
+  .row.ai { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .bubble {
+    max-width: 80%;
+    padding: 11px 14px;
+    border-radius: 16px;
+    font-size: 14.5px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .row.user .bubble { background: var(--user-bubble); color: #fff; border-bottom-right-radius: 5px; }
+  .row.ai .bubble { background: var(--ai-bubble); color: var(--ink); border-bottom-left-radius: 5px; }
+  /* event preview card (stands in for a "screenshot" of the new event) */
+  .event-card {
+    width: 100%;
+    max-width: 92%;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: 0 6px 18px rgba(31,36,48,.08);
+  }
+  .event-card .label { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .event-card .title { font-size: 15px; font-weight: 650; margin-bottom: 4px; }
+  .event-card .when { font-size: 13px; color: #374151; margin-bottom: 8px; }
+  .event-card a { display: inline-block; font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; }
+  .event-card a:hover { text-decoration: underline; }
+  /* typing indicator */
+  .typing { display: inline-flex; gap: 4px; padding: 14px 16px; background: var(--ai-bubble); border-radius: 16px; border-bottom-left-radius: 5px; }
+  .typing span { width: 7px; height: 7px; border-radius: 50%; background: #9aa2b1; animation: blink 1.2s infinite; }
+  .typing span:nth-child(2) { animation-delay: .2s; }
+  .typing span:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%,80%,100% { opacity: .25; } 40% { opacity: 1; } }
+  /* input bar */
+  .inputbar { display: flex; gap: 10px; padding: 14px; border-top: 1px solid var(--border); background: #fff; }
+  .inputbar input { flex: 1; border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; font-size: 14.5px; outline: none; }
+  .inputbar input:focus { border-color: var(--accent); }
+  .send { border: none; cursor: pointer; background: var(--accent); color: #fff; padding: 0 18px; border-radius: 12px; font-size: 14px; font-weight: 600; }
+  .send:disabled { opacity: .5; cursor: not-allowed; }
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div>
+        <h1>&#128197; Calendar Assistant</h1>
+        <div class="sub">Tell me what to schedule &mdash; I'll set it up.</div>
+      </div>
+      <button class="refresh" id="refresh" title="Start a fresh conversation">&#8635; Refresh</button>
+    </div>
+
+    <div class="chat" id="chat"></div>
+
+    <div class="inputbar">
+      <input id="msg" type="text" placeholder="e.g. Book a 30-min call with Sam on Friday at 2pm" autocomplete="off">
+      <button class="send" id="send">Send</button>
+    </div>
+  </div>
+
+<script>
+  const chatEl = document.getElementById('chat');
+  const msgInput = document.getElementById('msg');
+  const sendBtn = document.getElementById('send');
+  const refreshBtn = document.getElementById('refresh');
+
+  // The conversation, kept in the browser. Each turn we send the recent
+  // messages back so the AI remembers context (e.g. a date you just gave it).
+  let history = [];
+
+  // Escape text so user/ai content can never inject HTML.
+  function escapeHtml(s) {
+    return (s || '').replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  function fmtDate(iso) {
+    const d = new Date(iso);
+    if (!iso || isNaN(d)) return '';
+    return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+  function fmtTime(iso) {
+    const d = new Date(iso);
+    if (!iso || isNaN(d)) return '';
+    return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  }
+
+  // A little card that previews the created event (our "screenshot").
+  function eventCardHTML(evt) {
+    if (!evt) return '';
+    const start = fmtDate(evt.start);
+    const times = fmtTime(evt.start) ? fmtTime(evt.start) + ' \u2013 ' + fmtTime(evt.end) : '';
+    const when = [start, times].filter(Boolean).join('  \u00b7  ');
+    const link = evt.link ? `<a href="${escapeHtml(evt.link)}" target="_blank" rel="noopener">Open in Google Calendar \u2192</a>` : '';
+    return `<div class="event-card">
+        <div class="label">On your calendar</div>
+        <div class="title">${escapeHtml(evt.title || 'New event')}</div>
+        ${when ? `<div class="when">\uD83D\uDDD3 ${escapeHtml(when)}</div>` : ''}
+        ${link}
+      </div>`;
+  }
+
+  function addMessage(role, content, evt) {
+    const row = document.createElement('div');
+    row.className = 'row ' + (role === 'user' ? 'user' : 'ai');
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = content;   // textContent = no HTML injection
+    row.appendChild(bubble);
+    if (role === 'ai' && evt) {
+      const wrap = document.createElement('div');
+      wrap.innerHTML = eventCardHTML(evt);
+      row.appendChild(wrap);
+    }
+    chatEl.appendChild(row);
+    scrollDown();
+  }
+
+  function scrollDown() { chatEl.scrollTop = chatEl.scrollHeight; }
+
+  function showTyping() {
+    const row = document.createElement('div');
+    row.className = 'row ai';
+    row.id = 'typing-row';
+    row.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+    chatEl.appendChild(row);
+    scrollDown();
+  }
+  function hideTyping() {
+    const t = document.getElementById('typing-row');
+    if (t) t.remove();
+  }
+
+  async function send() {
+    const text = msgInput.value.trim();
+    if (!text) return;
+    msgInput.value = '';
+    setBusy(true);
+
+    addMessage('user', text);
+    showTyping();
+
+    // history holds the previous turns only; the server adds this new one.
+    const payload = { message: text, messages: history };
+    try {
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      hideTyping();
+      const reply = data.reply || data.error || "I'm not sure about that. Could you tell me what to schedule?";
+      addMessage('assistant', reply, data.event);
+      history.push({ role: 'user', content: text });
+      history.push({ role: 'assistant', content: reply });
+    } catch (err) {
+      hideTyping();
+      addMessage('assistant', "Hmm, I couldn't reach the assistant. Is `python app.py` still running?");
+    } finally {
+      setBusy(false);
+      msgInput.focus();
+    }
+  }
+
+  function setBusy(busy) {
+    sendBtn.disabled = busy;
+    sendBtn.textContent = busy ? '\u2026' : 'Send';
+  }
+
+  function reset() {
+    history = [];
+    chatEl.innerHTML = '';
+    addMessage('assistant', "Hi! \uD83D\uDCC5 I can add events to your Google Calendar. What would you like to schedule? (e.g. \u201Ca 30-min call with Sam on Friday at 2pm\u201D)");
+  }
+
+  sendBtn.addEventListener('click', send);
+  msgInput.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+  refreshBtn.addEventListener('click', reset);
+
+  reset();  // show the greeting
+</script>
+</body>
+</html>
