@@ -1,0 +1,17 @@
+# --- Secrets: never commit these -----------------------------------------
+# Service account key
+credentials.json
+# OAuth client secret (Google Cloud "Desktop app" credentials)
+credentials.json
+# Saved OAuth token from the notebook
+token.json
+# API keys
+.env
+
+# --- Python ----------------------------------------------------------------
+.venv/
+__pycache__/
+*.py[cod]
+
+# --- Jupyter ---------------------------------------------------------------
+.ipynb_checkpoints/
