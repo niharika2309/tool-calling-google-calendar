@@ -179,7 +179,7 @@
     bubble.className = 'bubble';
     bubble.textContent = content;   // textContent = no HTML injection
     row.appendChild(bubble);
-    if (role === 'ai' && evt) {
+    if (role !== 'user' && evt) {
       const wrap = document.createElement('div');
       wrap.innerHTML = eventCardHTML(evt);
       row.appendChild(wrap);
